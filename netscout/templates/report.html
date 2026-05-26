@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan Report — {{ results.target }} — NetScout</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+
+        /* ---- NAV ---- */
+        .navbar {
+            background: #1e293b;
+            border-bottom: 1px solid #334155;
+            padding: 14px 40px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .navbar .logo-icon {
+            width: 32px; height: 32px;
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .navbar h1 { font-size: 18px; font-weight: 700; color: #f1f5f9; }
+        .navbar a {
+            margin-left: auto;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 13px;
+            border: 1px solid #334155;
+            padding: 6px 14px;
+            border-radius: 6px;
+            transition: color 0.2s, border-color 0.2s;
+        }
+        .navbar a:hover { color: #3b82f6; border-color: #3b82f6; }
+
+        /* ---- LAYOUT ---- */
+        .container { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
+
+        /* ---- REPORT HEADER ---- */
+        .report-header {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            padding: 36px;
+            margin-bottom: 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 24px;
+        }
+
+        .report-title h2 {
+            font-size: 26px;
+            font-weight: 800;
+            color: #f1f5f9;
+            margin-bottom: 6px;
+        }
+
+        .report-title .target-badge {
+            display: inline-block;
+            background: #0f172a;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            padding: 4px 12px;
+            font-family: monospace;
+            font-size: 14px;
+            color: #60a5fa;
+            margin-bottom: 12px;
+        }
+
+        .report-meta span {
+            display: inline-block;
+            font-size: 12px;
+            color: #64748b;
+            margin-right: 20px;
+        }
+
+        .report-meta span strong {
+            color: #94a3b8;
+        }
+
+        /* Risk gauge on header */
+        .risk-gauge {
+            text-align: center;
+            min-width: 140px;
+        }
+
+        .risk-gauge .score-circle {
+            width: 100px; height: 100px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            border: 4px solid;
+        }
+
+        .risk-gauge .score-number {
+            font-size: 32px;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .risk-gauge .score-label {
+            font-size: 10px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .risk-gauge .risk-text {
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* ---- SUMMARY CARDS ---- */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-card .stat-number {
+            font-size: 36px;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        .stat-card .stat-label {
+            font-size: 12px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        /* ---- RISK BAR CHART ---- */
+        .risk-chart-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 28px;
+        }
+
+        .risk-chart-card h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 20px;
+        }
+
+        .risk-bars { display: flex; flex-direction: column; gap: 12px; }
+
+        .risk-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .risk-bar-label {
+            width: 70px;
+            font-size: 12px;
+            font-weight: 700;
+            text-align: right;
+        }
+
+        .risk-bar-track {
+            flex: 1;
+            background: #0f172a;
+            border-radius: 4px;
+            height: 20px;
+            overflow: hidden;
+        }
+
+        .risk-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.6s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            color: white;
+            min-width: 20px;
+        }
+
+        .risk-bar-count {
+            width: 32px;
+            text-align: right;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        /* ---- HOST SECTION ---- */
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #334155;
+        }
+
+        .host-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .host-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .host-info h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #f1f5f9;
+            font-family: monospace;
+        }
+
+        .host-info .host-meta {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .host-stats {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .host-stat {
+            text-align: center;
+        }
+
+        .host-stat .num {
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        .host-stat .lbl {
+            font-size: 11px;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        /* ---- PORT TABLE ---- */
+        .port-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .port-table th {
+            background: #0f172a;
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .port-table td {
+            padding: 14px 16px;
+            border-top: 1px solid #1e293b;
+            font-size: 13px;
+            vertical-align: top;
+        }
+
+        .port-table tr:hover td { background: rgba(59, 130, 246, 0.04); }
+
+        .port-num {
+            font-family: monospace;
+            font-size: 14px;
+            font-weight: 700;
+            color: #60a5fa;
+        }
+
+        .service-name {
+            font-weight: 700;
+            color: #e2e8f0;
+        }
+
+        .banner-text {
+            font-family: monospace;
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 4px;
+            word-break: break-all;
+        }
+
+        /* Risk badges */
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            border: 1px solid;
+        }
+
+        .badge-CRITICAL { color: #fca5a5; background: rgba(220,38,38,0.12); border-color: rgba(220,38,38,0.4); }
+        .badge-HIGH     { color: #fdba74; background: rgba(234,88,12,0.12); border-color: rgba(234,88,12,0.4); }
+        .badge-MEDIUM   { color: #fde68a; background: rgba(202,138,4,0.12);  border-color: rgba(202,138,4,0.4); }
+        .badge-LOW      { color: #86efac; background: rgba(22,163,74,0.12);  border-color: rgba(22,163,74,0.4); }
+        .badge-INFO     { color: #93c5fd; background: rgba(37,99,235,0.12);  border-color: rgba(37,99,235,0.4); }
+
+        .vuln-list {
+            list-style: none;
+            margin-top: 8px;
+        }
+
+        .vuln-list li {
+            font-size: 12px;
+            color: #94a3b8;
+            padding: 2px 0;
+        }
+
+        .vuln-list li::before {
+            content: '⚠ ';
+            color: #64748b;
+        }
+
+        .cve-tags {
+            margin-top: 6px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .cve-tag {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 10px;
+            font-family: monospace;
+            color: #94a3b8;
+        }
+
+        .cve-tag a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .cve-tag a:hover { color: #60a5fa; }
+
+        /* ---- NO HOSTS ---- */
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: #475569;
+        }
+
+        .no-results .icon { font-size: 48px; margin-bottom: 16px; }
+        .no-results h3 { font-size: 20px; color: #64748b; margin-bottom: 8px; }
+
+        /* ---- ERROR ---- */
+        .error-card {
+            background: rgba(220,38,38,0.1);
+            border: 1px solid rgba(220,38,38,0.3);
+            border-radius: 12px;
+            padding: 24px;
+            color: #fca5a5;
+            margin-bottom: 24px;
+        }
+
+        /* ---- PRINT BUTTON ---- */
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover { opacity: 0.85; }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            color: white;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #94a3b8;
+            border: 1px solid #334155;
+        }
+
+        /* ---- FOOTER ---- */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #334155;
+            font-size: 12px;
+            border-top: 1px solid #1e293b;
+            margin-top: 20px;
+        }
+
+        @media print {
+            body { background: white; color: black; }
+            .navbar a, .actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Nav -->
+    <nav class="navbar">
+        <div class="logo-icon">🛡</div>
+        <h1>NetScout</h1>
+        <a href="/">← New Scan</a>
+    </nav>
+
+    <div class="container">
+
+        {% if results.error %}
+        <div class="error-card">
+            <strong>⚠ Error:</strong> {{ results.error }}
+        </div>
+        {% endif %}
+
+        <!-- Report Header -->
+        <div class="report-header">
+            <div class="report-title">
+                <p style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Security Audit Report</p>
+                <h2>Vulnerability Scan Results</h2>
+                <div class="target-badge">🎯 {{ results.target }}</div>
+                <div class="report-meta">
+                    <span><strong>Scan Started:</strong> {{ results.started }}</span>
+                    <span><strong>Completed:</strong> {{ results.get('finished', 'N/A') }}</span>
+                    <span><strong>Hosts Scanned:</strong> {{ results.summary.total_scanned }}</span>
+                </div>
+            </div>
+
+            {% set score = results.summary.risk_score %}
+            {% set overall = results.summary.overall_risk %}
+            {% if overall == 'CRITICAL' %}
+                {% set gcolor = '#dc2626' %}
+            {% elif overall == 'HIGH' %}
+                {% set gcolor = '#ea580c' %}
+            {% elif overall == 'MEDIUM' %}
+                {% set gcolor = '#ca8a04' %}
+            {% elif overall == 'LOW' %}
+                {% set gcolor = '#16a34a' %}
+            {% else %}
+                {% set gcolor = '#2563eb' %}
+            {% endif %}
+
+            <div class="risk-gauge">
+                <div class="score-circle" style="border-color:{{ gcolor }}; color:{{ gcolor }}">
+                    <div class="score-number">{{ score }}</div>
+                    <div class="score-label">/ 100</div>
+                </div>
+                <div class="risk-text" style="color:{{ gcolor }}">{{ overall }} Risk</div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="actions">
+            <button class="btn btn-primary" onclick="window.print()">🖨 Print / Save as PDF</button>
+            <a href="/" style="text-decoration:none">
+                <button class="btn btn-outline">🔍 New Scan</button>
+            </a>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="summary-grid">
+            <div class="stat-card">
+                <div class="stat-number" style="color:#60a5fa">{{ results.summary.hosts_up }}</div>
+                <div class="stat-label">Hosts Online</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" style="color:#e2e8f0">{{ results.summary.total_ports }}</div>
+                <div class="stat-label">Open Ports</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" style="color:#dc2626">{{ results.summary.risk_counts.CRITICAL }}</div>
+                <div class="stat-label">Critical</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" style="color:#ea580c">{{ results.summary.risk_counts.HIGH }}</div>
+                <div class="stat-label">High</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" style="color:#ca8a04">{{ results.summary.risk_counts.MEDIUM }}</div>
+                <div class="stat-label">Medium</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" style="color:#16a34a">{{ results.summary.risk_counts.LOW }}</div>
+                <div class="stat-label">Low</div>
+            </div>
+        </div>
+
+        <!-- Risk Distribution Bar Chart -->
+        {% set total_findings = results.summary.risk_counts.CRITICAL + results.summary.risk_counts.HIGH + results.summary.risk_counts.MEDIUM + results.summary.risk_counts.LOW + results.summary.risk_counts.INFO %}
+        {% if total_findings > 0 %}
+        <div class="risk-chart-card">
+            <h3>Risk Distribution</h3>
+            <div class="risk-bars">
+                {% set risk_data = [
+                    ('CRITICAL', '#dc2626', results.summary.risk_counts.CRITICAL),
+                    ('HIGH',     '#ea580c', results.summary.risk_counts.HIGH),
+                    ('MEDIUM',   '#ca8a04', results.summary.risk_counts.MEDIUM),
+                    ('LOW',      '#16a34a', results.summary.risk_counts.LOW),
+                    ('INFO',     '#2563eb', results.summary.risk_counts.INFO)
+                ] %}
+                {% for label, color, count in risk_data %}
+                {% set pct = ((count / total_findings) * 100) | round | int %}
+                <div class="risk-bar-row">
+                    <div class="risk-bar-label" style="color:{{ color }}">{{ label }}</div>
+                    <div class="risk-bar-track">
+                        <div class="risk-bar-fill" style="width:{{ pct }}%; background:{{ color }}">
+                            {% if pct > 10 %}{{ pct }}%{% endif %}
+                        </div>
+                    </div>
+                    <div class="risk-bar-count" style="color:{{ color }}">{{ count }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Per-Host Results -->
+        <div class="section-title">
+            Host Findings
+            <span style="font-size:13px;font-weight:400;color:#64748b;margin-left:12px">
+                {{ results.summary.hosts_up }} host(s) responded
+            </span>
+        </div>
+
+        {% if results.hosts %}
+            {% for host in results.hosts %}
+            <div class="host-card">
+
+                <!-- Host Header -->
+                <div class="host-header">
+                    <div class="host-info">
+                        <h4>{{ host.ip }}</h4>
+                        <div class="host-meta">
+                            {% if host.hostname != host.ip %}Hostname: {{ host.hostname }} &nbsp;|&nbsp; {% endif %}
+                            Scanned: {{ host.scanned_at }}
+                        </div>
+                    </div>
+                    <div class="host-stats">
+                        <div class="host-stat">
+                            <div class="num" style="color:#60a5fa">{{ host.open_ports }}</div>
+                            <div class="lbl">Open Ports</div>
+                        </div>
+                        <div class="host-stat">
+                            <div class="num" style="color:#dc2626">{{ host.risk_counts.CRITICAL }}</div>
+                            <div class="lbl">Critical</div>
+                        </div>
+                        <div class="host-stat">
+                            <div class="num" style="color:#ea580c">{{ host.risk_counts.HIGH }}</div>
+                            <div class="lbl">High</div>
+                        </div>
+                        <div class="host-stat">
+                            {% set hcolor = '#dc2626' if host.overall_risk == 'CRITICAL' else ('#ea580c' if host.overall_risk == 'HIGH' else ('#ca8a04' if host.overall_risk == 'MEDIUM' else '#16a34a')) %}
+                            <div class="num" style="color:{{ hcolor }}">{{ host.host_score }}</div>
+                            <div class="lbl">Risk Score</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Port Table -->
+                <table class="port-table">
+                    <thead>
+                        <tr>
+                            <th style="width:80px">Port</th>
+                            <th style="width:140px">Service</th>
+                            <th>Vulnerability Details</th>
+                            <th style="width:90px">Risk Level</th>
+                            <th style="width:160px">CVE References</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in host.ports %}
+                        <tr>
+                            <td>
+                                <div class="port-num">{{ p.port }}/tcp</div>
+                            </td>
+                            <td>
+                                <div class="service-name">{{ p.service }}</div>
+                                {% if p.banner %}
+                                <div class="banner-text">{{ p.banner[:80] }}</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div style="font-size:12px;color:#94a3b8;margin-bottom:6px">{{ p.description }}</div>
+                                <ul class="vuln-list">
+                                    {% for v in p.vulnerabilities %}
+                                    <li>{{ v }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ p.risk }}">{{ p.risk }}</span>
+                            </td>
+                            <td>
+                                {% if p.cves %}
+                                <div class="cve-tags">
+                                    {% for cve in p.cves %}
+                                    <span class="cve-tag">
+                                        <a href="https://nvd.nist.gov/vuln/detail/{{ cve }}" target="_blank">{{ cve }}</a>
+                                    </span>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <span style="color:#334155;font-size:12px">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endfor %}
+
+        {% else %}
+            <div class="no-results">
+                <div class="icon">🔒</div>
+                <h3>No Hosts Found</h3>
+                <p>The target did not respond to any port probes, or all ports are filtered/closed.</p>
+            </div>
+        {% endif %}
+
+    </div>
+
+    <div class="footer">
+        NetScout — For authorized use only. Always scan systems you own or have written permission to test.
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NetScout — Network Vulnerability Scanner</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top nav bar */
+        .navbar {
+            background: #1e293b;
+            border-bottom: 1px solid #334155;
+            padding: 14px 40px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .navbar .logo-icon {
+            width: 32px; height: 32px;
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px;
+        }
+        .navbar h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #f1f5f9;
+            letter-spacing: 0.5px;
+        }
+        .navbar .version {
+            background: #334155;
+            color: #94a3b8;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: 4px;
+        }
+
+        /* Hero section */
+        .hero {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px;
+        }
+
+        .hero-badge {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #60a5fa;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 16px;
+            border-radius: 20px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 24px;
+        }
+
+        .hero h2 {
+            font-size: 42px;
+            font-weight: 800;
+            text-align: center;
+            color: #f1f5f9;
+            line-height: 1.2;
+            margin-bottom: 16px;
+        }
+
+        .hero h2 span {
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            color: #94a3b8;
+            font-size: 16px;
+            text-align: center;
+            max-width: 520px;
+            line-height: 1.6;
+            margin-bottom: 48px;
+        }
+
+        /* Scan card */
+        .scan-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            padding: 36px;
+            width: 100%;
+            max-width: 580px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+
+        .scan-card label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 10px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .scan-card input[type="text"] {
+            flex: 1;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 14px 18px;
+            font-size: 15px;
+            color: #f1f5f9;
+            font-family: 'Courier New', monospace;
+            transition: border-color 0.2s;
+            outline: none;
+        }
+
+        .scan-card input[type="text"]:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        .scan-card input[type="text"]::placeholder {
+            color: #475569;
+        }
+
+        .btn-scan {
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 14px 28px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+            white-space: nowrap;
+        }
+
+        .btn-scan:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-scan:active { transform: translateY(0); }
+
+        .examples {
+            margin-top: 16px;
+            font-size: 12px;
+            color: #475569;
+        }
+
+        .examples span {
+            color: #64748b;
+            cursor: pointer;
+            font-family: monospace;
+            background: #0f172a;
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid #334155;
+            margin: 0 4px;
+            transition: color 0.2s;
+        }
+
+        .examples span:hover { color: #3b82f6; border-color: #3b82f6; }
+
+        /* Feature pills */
+        .features {
+            display: flex;
+            gap: 12px;
+            margin-top: 48px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .feature-pill {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-size: 13px;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .feature-pill .dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* Loading overlay */
+        #loading-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.92);
+            z-index: 100;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+        }
+
+        #loading-overlay.active { display: flex; }
+
+        .spinner {
+            width: 52px; height: 52px;
+            border: 4px solid #334155;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loading-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        .loading-sub {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .loading-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .loading-step {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: #475569;
+        }
+
+        .loading-step.active { color: #60a5fa; }
+        .loading-step .step-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #334155;
+            flex-shrink: 0;
+        }
+        .loading-step.active .step-dot { background: #3b82f6; }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #334155;
+            font-size: 12px;
+            border-top: 1px solid #1e293b;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <div>
+            <div class="loading-text">Scanning Target...</div>
+            <div class="loading-sub">This may take 30–60 seconds</div>
+        </div>
+        <div class="loading-steps">
+            <div class="loading-step active" id="step1"><div class="step-dot"></div> Resolving target host</div>
+            <div class="loading-step" id="step2"><div class="step-dot"></div> Scanning common ports</div>
+            <div class="loading-step" id="step3"><div class="step-dot"></div> Grabbing service banners</div>
+            <div class="loading-step" id="step4"><div class="step-dot"></div> Matching vulnerabilities</div>
+            <div class="loading-step" id="step5"><div class="step-dot"></div> Generating report</div>
+        </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="navbar">
+        <div class="logo-icon">🛡</div>
+        <h1>NetScout</h1>
+        <span class="version">v1.0</span>
+    </nav>
+
+    <!-- Main content -->
+    <div class="hero">
+        <div class="hero-badge">🔍 Network Security Scanner</div>
+        <h2>Scan. Detect. <span>Protect.</span></h2>
+        <p>Enter an IP address or network range to discover open ports, running services, and known vulnerabilities — with a full risk report.</p>
+
+        <!-- Scan form -->
+        <div class="scan-card">
+            <form action="/scan" method="POST" id="scan-form">
+                <label>Target IP Address or Range</label>
+                <div class="input-row">
+                    <input
+                        type="text"
+                        name="target"
+                        id="target-input"
+                        placeholder="e.g. 192.168.1.1  or  192.168.1.0/24"
+                        required
+                        autocomplete="off"
+                        spellcheck="false"
+                    >
+                    <button type="submit" class="btn-scan">▶ Scan</button>
+                </div>
+                <div class="examples">
+                    Try:
+                    <span onclick="setTarget('192.168.1.1')">192.168.1.1</span>
+                    <span onclick="setTarget('192.168.1.0/24')">192.168.1.0/24</span>
+                    <span onclick="setTarget('10.0.0.1')">10.0.0.1</span>
+                </div>
+            </form>
+        </div>
+
+        <!-- Feature pills -->
+        <div class="features">
+            <div class="feature-pill">
+                <div class="dot" style="background:#dc2626"></div>
+                Port Scanning
+            </div>
+            <div class="feature-pill">
+                <div class="dot" style="background:#ea580c"></div>
+                Service Detection
+            </div>
+            <div class="feature-pill">
+                <div class="dot" style="background:#ca8a04"></div>
+                CVE Matching
+            </div>
+            <div class="feature-pill">
+                <div class="dot" style="background:#16a34a"></div>
+                Risk Scoring
+            </div>
+            <div class="feature-pill">
+                <div class="dot" style="background:#2563eb"></div>
+                Full PDF Report
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        NetScout — For authorized use only. Always scan systems you own or have written permission to test.
+    </div>
+
+    <script>
+        function setTarget(val) {
+            document.getElementById('target-input').value = val;
+        }
+
+        document.getElementById('scan-form').addEventListener('submit', function() {
+            document.getElementById('loading-overlay').classList.add('active');
+
+            // Animate steps
+            const steps = ['step1','step2','step3','step4','step5'];
+            let i = 1;
+            const interval = setInterval(function() {
+                if (i < steps.length) {
+                    document.getElementById(steps[i]).classList.add('active');
+                    i++;
+                } else {
+                    clearInterval(interval);
+                }
+            }, 6000);
+        });
+    </script>
+
+</body>
+</html>
